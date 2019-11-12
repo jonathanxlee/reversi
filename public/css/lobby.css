@@ -1,0 +1,19 @@
+html,
+body {
+    height: 100%;
+  }
+  
+  body {
+    display: -ms-flexbox;
+    display: flex;
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+  
+
+.form-enter-message {
+    width: 100%;
+    max-width: 400px;
+    padding: 5px;
+    margin: auto;
+}
