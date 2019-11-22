@@ -41,14 +41,14 @@ socket.on('join_room_response', function(payload) {
         return;
     }
     /* If we are bing notifies that we joined the room, then ignore it */
-    if(payload.socket_id == socket.id){
+    if(payload.socket_id === socket.id){
         return;
     }
 
     /* If someone joined then add a new row to the lobby table */ 
     var dom_elements = $('.socket_'+payload.socket_id);
     /* If we don't already have an entry for this person */
-    if(dom_elements.length === 0) {
+    if(dom_elements.length == 0) {
         var nodeA = $('<div></div>');
         nodeA.addClass('socket_'+payload.socket_id)
         var nodeB = $('<div></div>');
@@ -62,7 +62,7 @@ socket.on('join_room_response', function(payload) {
         nodeB.append('<h4>'+payload.username+'</h4>');
 
         nodeC.addClass('col-3 text-left');
-        var buttonC = makeInviteButton();
+        var buttonC = makeInviteButton(payload.socket_id);
         nodeC.append(buttonC);
 
         nodeA.hide();
@@ -103,10 +103,9 @@ socket.on('player_disconnected', function(payload) {
     var dom_elements = $('.socket_'+payload.socket_id);
     
     /* If something exists */
-    if(dom_elements.length === 0) {
+    if(dom_elements.length != 0) {
         dom_elements.slideUp(1000);
     }
-
     /* Manage a message that a new player has joined */ 
     var newHTML = '<p>'+payload.username+' has left the lobby</p>';
     var newNode = $(newHTML);
@@ -115,12 +114,38 @@ socket.on('player_disconnected', function(payload) {
     newNode.slideDown(1000);
 });
 
+function invite(who){
+    var payload = {};
+    payload.requested_user = who; 
+
+    console.log('*** Client Log Message: \'invite\' payload: '+ JSON.stringify(payload));
+    socket.emit('invite', payload);
+}
+
 socket.on('send_message_response', function(payload) {
     if(payload.result == 'fail') {
         alert(payload.message);
         return;
     }
     $('#messages').append('<p><b>' + payload.username + ' says:</b> ' + payload.message+'</p>');
+});
+
+socket.on('invite_response', function(payload) {
+    if(payload.result == 'fail') {
+        alert(payload.message);
+        return;
+    }
+    var newNode = makeInvitedButton();
+    $(' .socket_'+payload.socket_id+' button').replaceWith(newNode);
+});
+
+socket.on('invited', function(payload) {
+    if(payload.result == 'fail') {
+        alert(payload.message);
+        return;
+    }
+    var newNode = makePlayButton();
+    $('.socket_'+payload.socket_id+' button').replaceWith(newNode);
 });
 
 function send_message(){
@@ -134,9 +159,30 @@ function send_message(){
     socket.emit('send_message', payload)
 }
 
-function makeInviteButton() {
+function makeInviteButton(socket_id) {
     var newHTML = '<button type=\'button\' class=\'btn btn-outline btn-primary\'> Invite</button>';
-    var newNode = $(newHTML)
+    var newNode = $(newHTML);
+    newNode.click(function(){
+        invite(socket_id);
+    })
+    return(newNode);
+}
+
+function makeInvitedButton() {
+    var newHTML = '<button type=\'button\' class=\'btn btn-primary\'> Invited</button>';
+    var newNode = $(newHTML);
+    return(newNode);
+}
+
+function makePlayButton() {
+    var newHTML = '<button type=\'button\' class=\'btn btn-success\'> Play</button>';
+    var newNode = $(newHTML);
+    return(newNode);
+}
+
+function makeEngageButton() {
+    var newHTML = '<button type=\'button\' class=\'btn btn-danger\'> Play</button>';
+    var newNode = $(newHTML);
     return(newNode);
 }
 
