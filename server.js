@@ -316,78 +316,178 @@ io.sockets.on('connection', function (socket) {
     */
 
    socket.on('invite', function(payload) {
-    log('invite with ' + JSON.stringify(payload));
+        log('invite with ' + JSON.stringify(payload));
 
-    if('undefined' === typeof payload || !payload){
-        var error_message = 'invite had no payload, command aborted';
-        log(error_message);
-        socket.emit('invite_response', {
-                                            result: 'fail',
-                                            message: error_message
+        if('undefined' === typeof payload || !payload){
+            var error_message = 'invite had no payload, command aborted';
+            log(error_message);
+            socket.emit('invite_response', {
+                                                result: 'fail',
+                                                message: error_message
 
-                                        });
-        return;
-    }
+                                            });
+            return;
+        }
 
-    var username = players[socket.id].username; 
-    if('undefined' === typeof username || !username){
-        var error_message = 'invite can\'t identigy who sent the message, command aborted';
-        log(error_message);
-        socket.emit('invite_repsonse',  {
-                                            result: 'fail',
-                                            message: error_message
+        var username = players[socket.id].username; 
+        if('undefined' === typeof username || !username){
+            var error_message = 'invite can\'t identigy who sent the message, command aborted';
+            log(error_message);
+            socket.emit('invite_repsonse',  {
+                                                result: 'fail',
+                                                message: error_message
 
-                                        });
-        return;
-    }
+                                            });
+            return;
+        }
 
-    var requested_user = payload.requested_user 
-    if('undefined' === typeof requested_user || !requested_user){
-        var error_message = 'invite didn\'t specify the requested_user, command aborted';
-        log(error_message);
-        socket.emit('invite_response',  {
-                                            result: 'fail',
-                                            message: error_message
+        var requested_user = payload.requested_user 
+        if('undefined' === typeof requested_user || !requested_user){
+            var error_message = 'invite didn\'t specify the requested_user, command aborted';
+            log(error_message);
+            socket.emit('invite_response',  {
+                                                result: 'fail',
+                                                message: error_message
 
-                                        });
-        return;
-    }
+                                            });
+            return;
+        }
 
-    var room = players[socket.id].room;
-    var roomObject = io.sockets.adapter.rooms[room]
+        var room = players[socket.id].room;
+        var roomObject = io.sockets.adapter.rooms[room];
 
-    if(!roomObject.sockets.hasOwnProperty(requested_user)){
-        var error_message = 'requested a user that wasn\'t in the room';
-        log(error_message);
-        socket.emit('invite_response',  {
-            result: 'fail',
-            message: error_message
+        if(!roomObject.sockets.hasOwnProperty(requested_user)){
+            var error_message = 'requested a user that wasn\'t in the room';
+            log(error_message);
+            socket.emit('invite_response',  {
+                result: 'fail',
+                message: error_message
 
-        });
-        return;
-    }
+            });
+            return;
+        }
 
-    /* If everything is okay respond to the inviter that it was succesful */
+        /* If everything is okay respond to the inviter that it was succesful */
 
-    var success_data =  {
-                            result: 'success',
-                            socket_id: requested_user
-                        }
+        var success_data =  {
+                                result: 'success',
+                                socket_id: requested_user
+                            }
 
-    socket.emit('invite_response', success_data);
+        socket.emit('invite_response', success_data);
 
-    /* Tell the invitee that they have been invited */ 
+        /* Tell the invitee that they have been invited */ 
 
-    var success_data =  {
-        result: 'success',
-        socket_id: requested_user
-    }
+        var success_data =  {
+            result: 'success',
+            socket_id: socket.id
+        }
 
-    socket.to(requested_user).emit('invite_response', success_data);
+        socket.to(requested_user).emit('invited', success_data);
 
-    log('invite succesful');
+        log('invite succesful');
+    });
 
-});
+    /* uninvite command */
+    /* payload: 
+       {
+           'requested_user': the socket ifd of the person being uninvited
+       }
 
+       invite response
+       {
+           'result': 'success'
+           'socket_id' : the socket id of the person being uninvited
+       }
+       or
+       {
+           'result' : 'fail',
+           'message' : failure message
+       }
+
+       invited response
+       {
+           'result': 'success'
+           'socket_id' : the socket id of the person doing the uninviting
+       }
+       or
+       {
+           'result' : 'fail',
+           'message' : failure message
+       }
+    */
+
+    socket.on('uninvite', function(payload) {
+        log('uninvite with ' + JSON.stringify(payload));
+
+        if('undefined' === typeof payload || !payload){
+            var error_message = 'uninvite had no payload, command aborted';
+            log(error_message);
+            socket.emit('uninvite_response', {
+                                                result: 'fail',
+                                                message: error_message
+
+                                            });
+            return;
+        }
+
+        var username = players[socket.id].username; 
+        if('undefined' === typeof username || !username){
+            var error_message = 'uninvite can\'t identify who sent the message, command aborted';
+            log(error_message);
+            socket.emit('uninvite_repsonse',  {
+                                                result: 'fail',
+                                                message: error_message
+
+                                            });
+            return;
+        }
+
+        var requested_user = payload.requested_user 
+        if('undefined' === typeof requested_user || !requested_user){
+            var error_message = 'uninvite didn\'t specify the requested_user, command aborted';
+            log(error_message);
+            socket.emit('uninvite_response',  {
+                                                result: 'fail',
+                                                message: error_message
+
+                                            });
+            return;
+        }
+
+        var room = players[socket.id].room;
+        var roomObject = io.sockets.adapter.rooms[room];
+
+        if(!roomObject.sockets.hasOwnProperty(requested_user)){
+            var error_message = 'requested a user that wasn\'t in the room';
+            log(error_message);
+            socket.emit('invite_response',  {
+                result: 'fail',
+                message: error_message
+
+            });
+            return;
+        }
+
+        /* If everything is okay respond to the inviter that it was succesful */
+
+        var success_data =  {
+                                result: 'success',
+                                socket_id: requested_user
+                            }
+
+        socket.emit('uninvite_response', success_data);
+
+        /* Tell the uninvitee that they have been uninvited */ 
+
+        var success_data =  {
+            result: 'success',
+            socket_id: socket.id
+        }
+
+        socket.to(requested_user).emit('uninvited', success_data);
+
+        log('uninvite succesful');
+    });
 });
 
